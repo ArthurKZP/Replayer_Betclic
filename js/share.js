@@ -1,11 +1,23 @@
 /*
  * Liens de partage : la main est compressée (deflate) puis encodée en base64url
- * dans le fragment de l'URL (#m=...). Rien n'est envoyé à un serveur.
+ * dans le fragment de l'URL (#m=...). Le fragment n'est jamais envoyé au serveur :
+ * la main voyage dans le lien lui-même.
+ *
+ * Format : <adresse>#m=<main>[&s=<étape>][&v=<siège>]
  */
-(function (root) {
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory();
+  } else {
+    root.Replayer = root.Replayer || {};
+    Object.assign(root.Replayer, factory());
+  }
+})(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const R = (root.Replayer = root.Replayer || {});
+  /** Version en ligne (GitHub Pages) vers laquelle pointent les liens partagés hors ligne. */
+  const PUBLIC_URL = 'https://arthurkzp.github.io/Replayer_Betclic/';
+  const LOCAL_HOSTS = /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/;
 
   function toBase64Url(bytes) {
     let bin = '';
@@ -48,15 +60,71 @@
     return new TextDecoder().decode(bytes);
   }
 
-  async function shareUrl(text) {
+  /**
+   * Vrai si la page est servie en ligne et ouverte directement (pas en local,
+   * pas dans un aperçu intégré) : ses liens peuvent alors être partagés tels quels.
+   */
+  function isHostedPage(loc, framed) {
+    return !!loc && /^https?:$/.test(loc.protocol) && !LOCAL_HOSTS.test(loc.hostname) && !framed;
+  }
+
+  function currentLocation() {
+    return typeof location !== 'undefined' ? location : null;
+  }
+
+  function isFramed() {
+    try {
+      return typeof window !== 'undefined' && window.top !== window.self;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  /** Adresse de base des liens : la page actuelle si elle est en ligne, sinon la version publique. */
+  function shareBase(loc, framed) {
+    const override = typeof self !== 'undefined' && self.REPLAYER_PUBLIC_URL;
+    if (override) return override;
+    return isHostedPage(loc, framed) ? loc.href.split('#')[0] : PUBLIC_URL;
+  }
+
+  /**
+   * Construit le lien de partage.
+   * opts : { step, seat, base } — step (index d'étape) et seat (siège de vue) sont facultatifs.
+   */
+  async function shareUrl(text, opts) {
+    const o = opts || {};
     const token = await encodeHand(text);
-    return location.href.split('#')[0] + '#m=' + token;
+    let hash = '#m=' + token;
+    if (o.step > 0) hash += '&s=' + Math.floor(o.step);
+    if (o.seat > 0) hash += '&v=' + Math.floor(o.seat);
+    return (o.base || shareBase(currentLocation(), isFramed())) + hash;
+  }
+
+  /** Lit un fragment "#m=...&s=...&v=..." ; renvoie null s'il ne contient pas de main. */
+  function parseShareHash(hash) {
+    const str = String(hash || '');
+    const m = str.match(/[#&]m=([A-Za-z0-9_-]+)/);
+    if (!m) return null;
+    const num = (key) => {
+      const r = str.match(new RegExp('[#&]' + key + '=(\\d+)'));
+      return r ? parseInt(r[1], 10) : null;
+    };
+    return { token: m[1], step: num('s'), seat: num('v') };
   }
 
   function tokenFromHash(hash) {
-    const m = String(hash || '').match(/[#&]m=([A-Za-z0-9_-]+)/);
-    return m ? m[1] : null;
+    const parsed = parseShareHash(hash);
+    return parsed ? parsed.token : null;
   }
 
-  Object.assign(R, { encodeHand, decodeHand, shareUrl, tokenFromHash });
-})(typeof self !== 'undefined' ? self : this);
+  return {
+    PUBLIC_URL,
+    encodeHand,
+    decodeHand,
+    shareUrl,
+    shareBase,
+    isHostedPage: (loc, framed) => isHostedPage(loc || currentLocation(), framed == null ? isFramed() : framed),
+    parseShareHash,
+    tokenFromHash,
+  };
+});
