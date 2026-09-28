@@ -1,0 +1,53 @@
+*** HEADER ***
+Site: Betclic.fr
+Game Mode: Cash Game
+Game Type: NL Texas Hold'em
+Game Name: NLHE 2.5/5 6 max Deep
+Game ID: 01M3J8SWDCV3XN2P04HAS9DTN4
+Hand ID: 01M3JB4H4V2H363FS9ETEQ7AY7
+Date & Time: 2026-09-27 21:08:03 (UTC)
+Table ID: 01M3J8SWDCRNZ7N6A1624478J1
+Blinds: €2.50/€5.00
+Total Pot: €210.00
+Rake: €4.00
+*** PLAYERS ***
+Seat 1: 1trepide (€500.00)
+Seat 2: Amyris (€525.00)
+Seat 3: Cidfaf (€141.50) [BTN]
+Seat 4: VlCTORlOUS (€500.00) [SB Hero]
+Seat 5: LAB00N (€568.45) [BB]
+Seat 6: LeCadreSUP (€603.63)
+*** HOLE CARDS ***
+Amyris: [Ah Qc]
+VlCTORlOUS: [9s 9h]
+*** PRE-FLOP ***
+21:08:03 - VlCTORlOUS: Posts SB €2.50
+21:08:03 - LAB00N: Posts BB €5.00
+21:08:05 - LeCadreSUP: Folds
+21:08:05 - VlCTORlOUS: Sits in
+21:08:07 - 1trepide: Folds
+21:08:15 - Amyris: Raises to €12.50
+21:08:15 - Cidfaf: Folds
+21:08:17 - Amyris: Sits in
+21:08:17 - VlCTORlOUS: Raises to €50.00
+21:08:19 - Amyris: Sits in
+21:08:20 - Amyris: Sits in
+21:08:24 - LAB00N: Folds
+21:08:30 - Amyris: Calls €37.50
+*** FLOP *** [Th Ts 6c]
+21:08:40 - VlCTORlOUS: Bets €52.50
+21:08:54 - Amyris: Calls €52.50
+*** TURN *** [Th Ts 6c 7c]
+21:09:03 - Amyris: Sits in
+21:09:05 - VlCTORlOUS: Checks
+21:09:22 - Amyris: Checks
+*** RIVER *** [Th Ts 6c 7c 7s]
+21:09:31 - VlCTORlOUS: Checks
+21:09:34 - Amyris: Checks
+*** SHOWDOWN ***
+VlCTORlOUS shows [9s 9h] (Two Pair) [Ts Th 9s 9h 7c]
+Amyris shows [Ah Qc] (Two Pair) [Ts Th 7s 7c Ah]
+*** SUMMARY ***
+VlCTORlOUS wins main pot of €206.00
+
+
