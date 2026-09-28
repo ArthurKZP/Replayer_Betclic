@@ -6,6 +6,15 @@
 <title>Replayer Hold'em</title>
 <meta name="description" content="Rejouez vos mains Betclic Poker depuis votre siège : collez l'historique, la main est rejouée action par action.">
 <meta name="theme-color" content="#0d0b0e">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Replayer Hold'em">
+<meta property="og:title" content="Une main de poker à rejouer">
+<meta property="og:description" content="Ouvrez le lien pour revoir la main action par action, depuis le siège du joueur.">
+<meta property="og:image" content="https://arthurkzp.github.io/Replayer_Betclic/assets/apercu-partage.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="fr_FR">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap">
@@ -20,7 +29,7 @@
       <span class="brand-tag">Mains Betclic Poker · vue depuis votre siège</span>
     </div>
     <div class="topbar-actions">
-      <button class="btn" id="btnShare" type="button" title="Copier un lien vers cette main">
+      <button class="btn" id="btnShare" type="button" title="Créer un lien vers cette main" aria-label="Partager la main">
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M14 5l7 7-7 7v-4.1c-5 0-8.5 1.6-11 5.1 1-5 4-10 11-11z"/></svg>
         <span class="btn-label">Partager</span>
       </button>
@@ -190,6 +199,34 @@
       <p class="list-title">Mains récentes</p>
       <ul class="hand-list" id="recentList"></ul>
     </div>
+  </form>
+</dialog>
+
+<dialog class="sheet" id="shareDialog" aria-labelledby="shareTitle">
+  <form class="import-body" id="shareForm" method="dialog">
+    <div class="import-head">
+      <div>
+        <h2 id="shareTitle">Partager la main</h2>
+        <p>Le lien contient toute la main. La personne qui l'ouvre la rejoue depuis votre siège, sans compte ni fichier.</p>
+      </div>
+      <button class="icon-btn" type="button" id="shareClose" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6l5.6-5.6L5 6.4z"/></svg>
+      </button>
+    </div>
+    <div class="share-link">
+      <label class="visually-hidden" for="shareUrl">Lien de la main</label>
+      <input id="shareUrl" type="text" readonly spellcheck="false">
+      <button class="btn btn-primary" id="shareCopy" type="button">Copier le lien</button>
+    </div>
+    <div class="setting">
+      <label for="shareFromStep">Démarrer à l'action affichée<small id="shareStepInfo"></small></label>
+      <span class="switch"><input type="checkbox" id="shareFromStep"><span></span></span>
+    </div>
+    <div class="import-actions">
+      <button class="btn" id="shareNative" type="button" hidden>Envoyer…</button>
+      <a class="btn" id="shareOpen" href="#" target="_blank" rel="noopener">Ouvrir dans un nouvel onglet</a>
+    </div>
+    <p class="share-note" id="shareNote" hidden></p>
   </form>
 </dialog>
 

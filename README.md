@@ -21,8 +21,12 @@ il revoit la main comme il l'a jouée.
   les 5 cartes gagnantes surlignées, pot envoyé au gagnant, rake affiché.
 - **Positions** calculées (UTG, HJ, CO, BTN, SB, BB), pots annexes en cas de tapis, mises non suivies rendues.
 - **Montants en € ou en BB**, cartes 4 couleurs, tapis rouge / graphite / vert.
-- **Partage** : « Partager » copie un lien qui contient la main compressée dans l'adresse (`#m=…`).
-  Rien n'est envoyé à un serveur : la main reste dans le lien et dans votre navigateur.
+- **Partage par lien web** : « Partager » crée un lien vers la version en ligne
+  (`https://arthurkzp.github.io/Replayer_Betclic/#m=…`) qui contient toute la main, compressée.
+  Il suffit de l'envoyer (WhatsApp, Discord, e-mail…) : la personne qui l'ouvre rejoue la main,
+  sans compte ni fichier. Options : démarrer à l'action affichée, garder le siège choisi.
+  Sur téléphone, le bouton « Envoyer… » ouvre le partage du système. Le lien s'affiche avec un aperçu
+  de la table dans les messageries.
 - **Déroulé** de la main dans la barre latérale (cliquable) et **résultat** de chaque joueur en fin de main.
 - Fonctionne sur ordinateur (table en paysage) et sur téléphone (table en portrait).
 
@@ -37,10 +41,18 @@ Pour servir le dossier en local :
 npm start          # http://localhost:8080
 ```
 
-### Héberger sur GitHub Pages
+### Mise en ligne (GitHub Pages)
 
-Le projet est 100 % statique. Dans *Settings → Pages* du dépôt, choisissez la branche et le dossier racine :
-le replayer est alors en ligne, et les liens « Partager » fonctionnent pour tout le monde.
+Le workflow `.github/workflows/pages.yml` lance les tests puis publie le site à chaque mise à jour de `main`.
+Réglage à faire **une seule fois** : *Settings → Pages → Build and deployment → Source : GitHub Actions*.
+
+Le replayer est ensuite en ligne sur **https://arthurkzp.github.io/Replayer_Betclic/**.
+Les liens « Partager » pointent toujours vers cette adresse, même si vous utilisez l'appli en local.
+
+Rien n'est stocké sur un serveur : la main est dans la partie `#…` du lien, que le navigateur n'envoie pas
+au serveur. Un lien fait environ 1 000 caractères pour une main de cash game.
+
+Pour héberger le replayer ailleurs, modifiez `PUBLIC_URL` dans `js/share.js`.
 
 ### Version en un seul fichier
 
@@ -75,7 +87,9 @@ Les montants en jetons (tournois) sont aussi acceptés.
 | `js/engine.js` | Chronologie des états de table (stacks, mises, pot, positions, pots annexes) |
 | `js/evaluator.js` | Évaluation des mains et descriptions en français |
 | `js/render.js` | Rendu de la table et animations |
-| `js/share.js` | Liens de partage (compression dans l'adresse) |
+| `js/share.js` | Liens de partage (main compressée dans l'adresse, action de départ, siège) |
+| `assets/apercu-partage.jpg` | Image d'aperçu affichée quand un lien est partagé |
+| `.github/workflows/pages.yml` | Tests puis mise en ligne sur GitHub Pages |
 | `js/app.js` | Interface : lecture, import, réglages, mode décision |
 | `js/sample.js` | Main d'exemple intégrée |
 | `tests/` | Tests du parseur, du moteur et de l'évaluateur |

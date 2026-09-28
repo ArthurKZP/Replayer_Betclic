@@ -138,12 +138,12 @@
       throw new Error(errors[0] || "Aucune main reconnue. Copiez l'historique complet, à partir de « *** HEADER *** ».");
     }
     app.hands = hands;
-    selectHand((opts && opts.index) || 0);
+    selectHand((opts && opts.index) || 0, opts);
     if (!(opts && opts.skipRecent)) rememberHands(hands);
     return hands;
   }
 
-  function selectHand(index) {
+  function selectHand(index, opts) {
     stop();
     app.handIndex = Math.max(0, Math.min(index, app.hands.length - 1));
     const hand = app.hands[app.handIndex];
@@ -158,6 +158,7 @@
     hideDecision();
     app.step = 0;
     showStep(0, null, true); // avec l'animation de distribution
+    if (!(opts && opts.noSync)) syncAddressBar();
   }
 
   function setViewer(name) {
@@ -651,19 +652,111 @@
 
   /* ---------- Partage -------------------------------------------------------------------- */
 
-  async function share() {
-    if (!app.timeline) return;
+  const shareDialog = $('#shareDialog');
+  let copyResetTimer = null;
+
+  function isFramed() {
     try {
-      const url = await R.shareUrl(app.timeline.hand.raw);
-      history.replaceState(null, '', url);
-      try {
-        await navigator.clipboard.writeText(url);
-        toast('Lien copié : il contient la main, rien n\'est envoyé en ligne');
-      } catch (e) {
-        toast("Lien prêt dans la barre d'adresse");
-      }
+      return window.top !== window.self;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  /** Siège à transmettre dans le lien : seulement si la vue n'est pas celle du héros. */
+  function sharedSeat() {
+    const hand = app.timeline.hand;
+    const p = hand.players.find((x) => x.name === app.viewer);
+    return p && p.name !== hand.heroName ? p.seat : 0;
+  }
+
+  async function refreshShareLink() {
+    const fromStep = $('#shareFromStep').checked;
+    const url = await R.shareUrl(app.timeline.hand.raw, { step: fromStep ? app.step : 0, seat: sharedSeat() });
+    $('#shareUrl').value = url;
+    $('#shareOpen').href = url;
+    return url;
+  }
+
+  async function openShare() {
+    if (!app.timeline) return;
+    stop();
+    const total = app.timeline.steps.length;
+    const current = app.timeline.steps[app.step];
+    const stepBox = $('#shareFromStep');
+    stepBox.checked = false;
+    stepBox.disabled = app.step === 0;
+    $('#shareStepInfo').textContent = app.step === 0
+      ? 'Avancez dans la main pour choisir une action de départ'
+      : `Action ${app.step + 1} / ${total} · ${R.describeEvent(current.event, fmt, R.cardText)}`;
+    const note = $('#shareNote');
+    if (R.isHostedPage()) {
+      note.hidden = true;
+    } else {
+      const host = R.PUBLIC_URL.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      note.innerHTML = `Le lien ouvre la version en ligne du replayer : <strong>${esc(host)}</strong>.`;
+      note.hidden = false;
+    }
+    $('#shareNative').hidden = !(navigator.share && !isFramed());
+    $('#shareCopy').textContent = 'Copier le lien';
+    try {
+      await refreshShareLink();
     } catch (e) {
       toast('Impossible de créer le lien sur ce navigateur');
+      return;
+    }
+    if (shareDialog.showModal) shareDialog.showModal();
+    else shareDialog.setAttribute('open', '');
+    $('#shareCopy').focus();
+  }
+
+  function closeShare() {
+    if (shareDialog.close) shareDialog.close();
+    else shareDialog.removeAttribute('open');
+  }
+
+  async function copyShareLink() {
+    const input = $('#shareUrl');
+    const btn = $('#shareCopy');
+    try {
+      await navigator.clipboard.writeText(input.value);
+      btn.textContent = 'Lien copié ✓';
+    } catch (e) {
+      input.focus();
+      input.select();
+      btn.textContent = 'Lien sélectionné : copiez-le';
+    }
+    clearTimeout(copyResetTimer);
+    copyResetTimer = setTimeout(() => { btn.textContent = 'Copier le lien'; }, 2500);
+  }
+
+  async function nativeShare() {
+    const hand = app.timeline.hand;
+    const heroCards = hand.heroName && hand.holeCards[hand.heroName];
+    const text = [heroCards ? R.cardText(heroCards) : '', hand.gameName].filter(Boolean).join(' · ');
+    try {
+      await navigator.share({ title: 'Une main de poker à rejouer', text, url: $('#shareUrl').value });
+    } catch (e) {
+      if (e && e.name !== 'AbortError') copyShareLink();
+    }
+  }
+
+  /**
+   * Sur la version en ligne, la barre d'adresse devient le lien de la main
+   * (comme un lien de partage). Hors ligne, on retire un ancien lien devenu faux.
+   */
+  let syncCounter = 0;
+  async function syncAddressBar() {
+    const mine = ++syncCounter;
+    try {
+      if (R.isHostedPage()) {
+        const url = await R.shareUrl(app.timeline.hand.raw);
+        if (mine === syncCounter && url.split('#')[0] === location.href.split('#')[0]) history.replaceState(null, '', url);
+      } else if (R.parseShareHash(location.hash)) {
+        history.replaceState(null, '', location.href.split('#')[0]);
+      }
+    } catch (e) {
+      /* l'adresse reste telle quelle */
     }
   }
 
@@ -735,7 +828,14 @@
     });
 
     $('#btnImport').addEventListener('click', openImport);
-    $('#btnShare').addEventListener('click', share);
+    $('#btnShare').addEventListener('click', openShare);
+    $('#shareClose').addEventListener('click', closeShare);
+    $('#shareCopy').addEventListener('click', copyShareLink);
+    $('#shareNative').addEventListener('click', nativeShare);
+    $('#shareFromStep').addEventListener('change', () => { refreshShareLink().catch(() => {}); });
+    $('#shareForm').addEventListener('submit', (e) => e.preventDefault());
+    $('#shareUrl').addEventListener('focus', (e) => e.target.select());
+    shareDialog.addEventListener('click', (e) => { if (e.target === shareDialog) closeShare(); });
     $('#importClose').addEventListener('click', closeImport);
     $('#importForm').addEventListener('submit', (e) => {
       e.preventDefault();
@@ -758,7 +858,7 @@
     // Dépôt d'un fichier n'importe où sur la page.
     document.addEventListener('dragover', (e) => e.preventDefault());
     document.addEventListener('drop', (e) => {
-      if (dialog.open) return;
+      if (dialog.open || shareDialog.open) return;
       e.preventDefault();
       if (e.dataTransfer && e.dataTransfer.files.length) {
         openImport();
@@ -767,7 +867,7 @@
     });
     // Coller une main directement sur la page.
     document.addEventListener('paste', (e) => {
-      if (dialog.open || /^(TEXTAREA|INPUT)$/.test((e.target && e.target.tagName) || '')) return;
+      if (dialog.open || shareDialog.open || /^(TEXTAREA|INPUT)$/.test((e.target && e.target.tagName) || '')) return;
       const text = e.clipboardData && e.clipboardData.getData('text');
       if (text && /\*{3}\s*PLAYERS\s*\*{3}/i.test(text)) {
         try {
@@ -780,7 +880,7 @@
     });
 
     document.addEventListener('keydown', (e) => {
-      if (dialog.open || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (dialog.open || shareDialog.open || e.altKey || e.ctrlKey || e.metaKey) return;
       const tag = (e.target && e.target.tagName) || '';
       if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag) && e.target.type !== 'range') return;
       if (!app.timeline) return;
@@ -822,16 +922,22 @@
   }
 
   async function loadFromHash() {
-    const token = R.tokenFromHash(location.hash);
-    if (!token) return false;
+    const link = R.parseShareHash(location.hash);
+    if (!link) return false;
+    let text;
     try {
-      const text = await R.decodeHand(token);
-      loadText(text, { skipRecent: true });
-      return true;
+      text = await R.decodeHand(link.token);
+      loadText(text, { skipRecent: true, noSync: true });
     } catch (e) {
-      toast("Ce lien de main est illisible ou incomplet");
+      toast('Ce lien de main est illisible ou incomplet : demandez un nouveau lien');
       return false;
     }
+    if (link.seat) {
+      const p = app.timeline.hand.players.find((x) => x.seat === link.seat);
+      if (p) setViewer(p.name);
+    }
+    if (link.step) goTo(Math.min(link.step, app.timeline.steps.length - 1), false);
+    return true;
   }
 
   async function init() {
@@ -839,7 +945,7 @@
     bind();
     if (root.REPLAYER_NO_SHARE) $('#btnShare').hidden = true;
     const fromLink = await loadFromHash();
-    if (!fromLink) loadText(R.SAMPLE_HAND, { skipRecent: true });
+    if (!fromLink) loadText(R.SAMPLE_HAND, { skipRecent: true, noSync: true });
   }
 
   init();

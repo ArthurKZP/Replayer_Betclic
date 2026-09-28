@@ -226,3 +226,34 @@ test('computePots sépare les pots selon les tapis', () => {
     { amount: 140, eligible: ['B', 'C'] },
   ]);
 });
+
+const share = require('../js/share.js');
+
+test('lien de partage : la main fait l\'aller-retour sans perte', async () => {
+  const url = await share.shareUrl(SAMPLE, { base: 'https://exemple.fr/replayer/', step: 9, seat: 2 });
+  assert.match(url, /^https:\/\/exemple\.fr\/replayer\/#m=z[A-Za-z0-9_-]+&s=9&v=2$/);
+  assert.ok(url.length < 1500, `lien trop long (${url.length} caractères)`);
+  const link = share.parseShareHash(url.slice(url.indexOf('#')));
+  assert.equal(link.step, 9);
+  assert.equal(link.seat, 2);
+  const text = await share.decodeHand(link.token);
+  assert.equal(text, SAMPLE);
+  assert.equal(parseHand(text).handId, '01M3JB4H4V2H363FS9ETEQ7AY7');
+});
+
+test('lien de partage : options absentes et fragments invalides', async () => {
+  const url = await share.shareUrl('abc', { base: 'https://exemple.fr/' });
+  assert.doesNotMatch(url, /[&](s|v)=/);
+  assert.deepEqual(share.parseShareHash(url.slice(url.indexOf('#'))), { token: url.split('#m=')[1], step: null, seat: null });
+  assert.equal(share.parseShareHash('#section'), null);
+  assert.equal(share.parseShareHash(''), null);
+});
+
+test('lien de partage : adresse publique quand la page est locale ou intégrée', () => {
+  const at = (href) => new URL(href);
+  assert.equal(share.shareBase(at('file:///C:/Replayer/index.html'), false), share.PUBLIC_URL);
+  assert.equal(share.shareBase(at('http://localhost:8080/'), false), share.PUBLIC_URL);
+  assert.equal(share.shareBase(at('https://arthurkzp.github.io/Replayer_Betclic/'), true), share.PUBLIC_URL);
+  assert.equal(share.shareBase(at('https://mon-site.fr/poker/index.html#m=abc'), false), 'https://mon-site.fr/poker/index.html');
+  assert.equal(share.PUBLIC_URL, 'https://arthurkzp.github.io/Replayer_Betclic/');
+});
