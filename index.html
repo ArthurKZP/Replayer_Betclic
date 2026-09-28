@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Replayer Hold'em</title>
+<meta name="description" content="Rejouez vos mains Betclic Poker depuis votre siège : collez l'historique, la main est rejouée action par action.">
+<meta name="theme-color" content="#0d0b0e">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="css/replayer.css">
+</head>
+<body>
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">♠</span>
+      <span class="brand-name">Replayer</span>
+      <span class="brand-tag">Mains Betclic Poker · vue depuis votre siège</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn" id="btnShare" type="button" title="Copier un lien vers cette main">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M14 5l7 7-7 7v-4.1c-5 0-8.5 1.6-11 5.1 1-5 4-10 11-11z"/></svg>
+        <span class="btn-label">Partager</span>
+      </button>
+      <button class="btn btn-primary" id="btnImport" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
+        <span>Nouvelle main</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="stage" aria-label="Table">
+      <div class="hand-strip" id="handStrip"></div>
+
+      <div class="table-area" id="tableArea">
+        <div class="table-wrap" id="tableWrap">
+          <div class="table-rail"><div class="table-felt"></div></div>
+          <div class="board" id="board" aria-label="Cartes communes"></div>
+          <div class="pot" id="pot" hidden></div>
+          <div class="bets"></div>
+          <div class="seats"></div>
+          <div class="dealer" hidden>D</div>
+          <div class="fx"></div>
+        </div>
+      </div>
+
+      <div class="decision" id="decision" hidden>
+        <div class="decision-title">
+          <strong id="decisionTitle">À vous de jouer</strong>
+          <span id="decisionInfo"></span>
+        </div>
+        <div class="decision-actions" id="decisionActions"></div>
+        <div class="decision-feedback" id="decisionFeedback" hidden>
+          <div>
+            <div id="decisionCompare"></div>
+            <div class="verdict" id="decisionVerdict"></div>
+          </div>
+          <button class="btn btn-primary" id="decisionContinue" type="button">Voir la suite</button>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="event-line" aria-live="polite">
+          <div class="event-text" id="eventText"></div>
+          <div class="event-count" id="eventCount"></div>
+        </div>
+        <div class="controls-row">
+          <div class="transport">
+            <button class="icon-btn" id="btnFirst" type="button" title="Début (Origine)" aria-label="Début de la main">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h2v14H5zM19 5v14L8 12z"/></svg>
+            </button>
+            <button class="icon-btn" id="btnPrev" type="button" title="Action précédente (←)" aria-label="Action précédente">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.4 5.4 14 4l-8 8 8 8 1.4-1.4L8.8 12z"/></svg>
+            </button>
+            <button class="icon-btn play" id="btnPlay" type="button" title="Lecture / pause (Espace)" aria-label="Lecture">
+              <svg viewBox="0 0 24 24" aria-hidden="true" id="playIcon"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+            <button class="icon-btn" id="btnNext" type="button" title="Action suivante (→)" aria-label="Action suivante">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.6 5.4 10 4l8 8-8 8-1.4-1.4 6.6-6.6z"/></svg>
+            </button>
+            <button class="icon-btn" id="btnLast" type="button" title="Fin (Fin)" aria-label="Fin de la main">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 5h2v14h-2zM5 5v14l11-7z"/></svg>
+            </button>
+          </div>
+          <div class="scrub">
+            <input class="scrubber" id="scrubber" type="range" min="0" max="0" value="0" step="1" aria-label="Progression de la main">
+          </div>
+          <div class="speed" role="group" aria-label="Vitesse">
+            <button type="button" data-speed="0.5" aria-pressed="false">0,5×</button>
+            <button type="button" data-speed="1" aria-pressed="true">1×</button>
+            <button type="button" data-speed="2" aria-pressed="false">2×</button>
+          </div>
+        </div>
+        <div class="controls-row">
+          <div class="streets" id="streets">
+            <button class="street-chip" type="button" data-street="preflop">Préflop</button>
+            <button class="street-chip" type="button" data-street="flop">Flop</button>
+            <button class="street-chip" type="button" data-street="turn">Turn</button>
+            <button class="street-chip" type="button" data-street="river">River</button>
+            <button class="street-chip" type="button" data-street="showdown">Abattage</button>
+          </div>
+          <span class="kbd-hint">Espace : lecture · ← → : actions</span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="sidebar">
+      <section class="panel" id="resultPanel" aria-labelledby="resultTitle">
+        <h2 id="resultTitle">Résultat</h2>
+        <div id="resultBody"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="logTitle">
+        <h2 id="logTitle">Déroulé de la main</h2>
+        <div class="log" id="log"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="settingsTitle">
+        <h2 id="settingsTitle">Affichage</h2>
+        <div class="settings">
+          <div class="setting">
+            <label for="viewerSelect">Voir depuis le siège de</label>
+            <select class="select" id="viewerSelect"></select>
+          </div>
+          <div class="setting">
+            <span>Montants</span>
+            <div class="segmented" role="group" aria-label="Unité des montants">
+              <button type="button" data-unit="money" aria-pressed="true">€</button>
+              <button type="button" data-unit="bb" aria-pressed="false">BB</button>
+            </div>
+          </div>
+          <div class="setting">
+            <label for="optDecision">Mode décision<small>La lecture s'arrête avant chacune de vos actions</small></label>
+            <span class="switch"><input type="checkbox" id="optDecision"><span></span></span>
+          </div>
+          <div class="setting">
+            <label for="optShowAll">Cartes adverses visibles<small>Montre dès le début les cartes connues</small></label>
+            <span class="switch"><input type="checkbox" id="optShowAll"><span></span></span>
+          </div>
+          <div class="setting">
+            <label for="optFourColor">Cartes 4 couleurs</label>
+            <span class="switch"><input type="checkbox" id="optFourColor"><span></span></span>
+          </div>
+          <div class="setting">
+            <span>Tapis</span>
+            <div class="swatches" role="group" aria-label="Couleur du tapis">
+              <button class="swatch f-rouge" type="button" data-felt="rouge" aria-pressed="true" title="Rouge" aria-label="Tapis rouge"></button>
+              <button class="swatch f-graphite" type="button" data-felt="graphite" aria-pressed="false" title="Graphite" aria-label="Tapis graphite"></button>
+              <button class="swatch f-vert" type="button" data-felt="vert" aria-pressed="false" title="Vert" aria-label="Tapis vert"></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <p class="footer-note">Outil indépendant, non affilié à Betclic. Vos historiques restent dans votre navigateur.</p>
+    </aside>
+  </main>
+</div>
+
+<dialog class="import" id="importDialog" aria-labelledby="importTitle">
+  <form class="import-body" id="importForm" method="dialog">
+    <div class="import-head">
+      <div>
+        <h2 id="importTitle">Importer une main</h2>
+        <p>Collez l'historique exporté depuis Betclic Poker, ou déposez le fichier .txt. Un export avec plusieurs mains fonctionne aussi.</p>
+      </div>
+      <button class="icon-btn" type="button" id="importClose" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6l5.6-5.6L5 6.4z"/></svg>
+      </button>
+    </div>
+    <div class="dropzone" id="dropzone">
+      <textarea id="importText" spellcheck="false" placeholder="*** HEADER ***&#10;Site: Betclic.fr&#10;Game Mode: Cash Game&#10;…"></textarea>
+    </div>
+    <p class="import-error" id="importError" hidden></p>
+    <div class="import-actions">
+      <label class="btn" for="importFile">Choisir un fichier .txt</label>
+      <input type="file" id="importFile" accept=".txt,text/plain" multiple hidden>
+      <button class="btn" type="button" id="importSample">Charger l'exemple</button>
+      <span class="spacer"></span>
+      <button class="btn btn-primary" type="submit" id="importSubmit">Rejouer la main</button>
+    </div>
+    <div id="handChoice" hidden>
+      <p class="list-title" id="handChoiceTitle">Mains trouvées</p>
+      <ul class="hand-list" id="handChoiceList"></ul>
+    </div>
+    <div id="recentBlock" hidden>
+      <p class="list-title">Mains récentes</p>
+      <ul class="hand-list" id="recentList"></ul>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/parser.js"></script>
+<script src="js/evaluator.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/render.js"></script>
+<script src="js/share.js"></script>
+<script src="js/sample.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
